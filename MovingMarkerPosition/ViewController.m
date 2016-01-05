@@ -2,55 +2,48 @@
 @import GoogleMaps;
 @import CoreLocation;
 
-@interface ViewController () <GMSIndoorDisplayDelegate, GMSMapViewDelegate>
+@interface ViewController ()<GMSPanoramaViewDelegate>
 
-@property (strong, nonatomic) IBOutlet GMSMapView *mapView;
-@property (nonatomic, strong) GMSMarker *marker;
+@property (strong, nonatomic) IBOutlet GMSPanoramaView *streetView;
+
 @property (nonatomic, strong) NSTimer *timer;
-
--(void) updateMarkerDetails;
 
 @end
 
 @implementation ViewController
 
+GMSPanorama* currentPanorama;
+
 -(void)viewDidAppear:(BOOL)animated {
-  [super viewDidAppear:animated];
-  
-  CLLocationCoordinate2D location = CLLocationCoordinate2DMake(40.295210, -124.032841);
-  GMSCameraPosition *camera = [GMSCameraPosition cameraWithTarget:location zoom:10.5];
-  [self.mapView animateToCameraPosition:camera];
-  [self.mapView setMapType:kGMSTypeHybrid];
-  
-  self.marker = [GMSMarker markerWithPosition:location];
-  self.marker.map = self.mapView;
-  
-  // Move marker about
-  self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0
-                                                target:self
-                                              selector:@selector(updateMarkerDetails)
-                                              userInfo:nil
-                                               repeats:YES];
-  
-  // Seed random
-  srand48(arc4random());
+    [super viewDidAppear:animated];
+    
+    [self moveToNextPanorama:@"DTn37FV8mJNg6G3oMaPhhQ"];
+    self.streetView.delegate = self;
+    
+    // Move marker about
+    self.timer = [NSTimer scheduledTimerWithTimeInterval:3.0
+                                                  target:self
+                                                selector:@selector(moveToNextPanoEvent)
+                                                userInfo:nil
+                                                 repeats:YES];
+    
 }
 
 #pragma mark - ViewController class extension methods
 
--(void) updateMarkerDetails {
-  
-  // Move the marker in a random direction.
-  double latDelta = (drand48() - 0.5) / 20;
-  double lngDelta = (drand48() - 0.5) / 20;
-  self.marker.position = CLLocationCoordinate2DMake(self.marker.position.latitude + latDelta,
-                                                    self.marker.position.longitude + lngDelta);
-  
-  // Make the map follow the marker.
-  CLLocationCoordinate2D newTarget = CLLocationCoordinate2DMake(self.mapView.camera.target.latitude + latDelta/3,
-                                                                self.mapView.camera.target.longitude + lngDelta/3);
-  GMSCameraPosition *position = [GMSCameraPosition cameraWithTarget:newTarget zoom:10.5];
-  [self.mapView animateToCameraPosition:position];
+-(void) moveToNextPanoEvent {
+    GMSPanorama *panorama = currentPanorama.links[1];
+    [self moveToNextPanorama:panorama.panoramaID];
 }
+
+-(void) moveToNextPanorama:(NSString*) panoId {
+    [self.streetView moveToPanoramaID:panoId];
+    
+}
+
+-(void)panoramaView:(GMSPanoramaView *)view didMoveToPanorama:(GMSPanorama *)panorama{
+    currentPanorama = panorama;
+}
+
 
 @end
